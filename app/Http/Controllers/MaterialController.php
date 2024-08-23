@@ -43,17 +43,20 @@ class MaterialController extends Controller
     {
         try {
             $request['status'] = $request->input('status', false);
+            if ($request->input('status', false) == 'true') {
+                $request['status'] = true;
+            }
             Material::create($request->all());
             return to_route('material.index')->with('menssagem.sucesso', 'Material cadastrado com sucesso');
         } catch (QueryException $e) {
             $material = new Material();
             $material->fill($request->all());
-            if ($e->errorInfo[0] == '23505') {
+            if ($e->errorInfo[0] == '23000') {
                 return redirect()->back()
                     ->withErrors(['msg' => 'Material com esse código já foi adicionado.'])
                     ->with('material', $request->except('_token'));
             }
-            return redirect()->back()->withErrors(['msg' => 'Erro desconhecido.']);
+            return redirect()->back()->withErrors(['msg' => 'Erro desconhecido.'])->with('material', $request->except('_token'));;
         } catch (Exception $e) {
             return redirect()->back()->withErrors(['msg' => 'An error occurred: ' . $e->getMessage()]);
         }
@@ -69,9 +72,26 @@ class MaterialController extends Controller
     public function update(Material $material, MaterialFormRequest $request)
     {
         $material->fill($request->all());
+        
         $material->status = $request->input('status', false);
-        $material->save();
-        return to_route('material.index')->with('menssagem.sucesso', 'Material alterado com sucesso');
+        if ($request->input('status', false) == 'true') {
+            $material->status = true;
+        }
+        try {
+            $material->save();
+            return to_route('material.index')->with('menssagem.sucesso', 'Material alterado com sucesso');
+        } catch (QueryException $e) {
+            $material = new Material();
+            $material->fill($request->all());
+            if ($e->errorInfo[0] == '23000') {
+                return redirect()->back()
+                    ->withErrors(['msg' => 'Material com esse código já foi adicionado.'])
+                    ->with('material', $request->except('_token'));
+            }
+            return redirect()->back()->withErrors(['msg' => 'Erro desconhecido.']);
+        } catch (Exception $e) {
+            return redirect()->back()->withErrors(['msg' => 'An error occurred: ' . $e->getMessage()]);
+        }
     }
 
     public function destroy(Request $request)
